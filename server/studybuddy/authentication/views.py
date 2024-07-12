@@ -10,11 +10,11 @@ import jwt, datetime
 
 class SignupView(APIView):
     def post(self, request):
-        print("Received data:", request.data)
+        
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            print("Signup dataset:", serializer.data)
+            
             return JsonResponse({'message': 'Account created successfully'}, status=201)
         return JsonResponse(serializer.errors, status=400)
 
@@ -37,6 +37,7 @@ class LoginView(APIView):
             }
 
             token = jwt.encode(payload, 'secret', algorithm='HS256')
+            print(payload)
             print(token)
             response = JsonResponse({'status': True, 'message': 'Login successful', 'token': token})
             return response

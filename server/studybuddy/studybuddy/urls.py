@@ -20,7 +20,14 @@ from django.urls import path,include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('pdfchatbot.urls')),
-    path('',include('authentication.urls')
+    path('',include('authentication.urls')),
+   # path('notes/', include('notes.urls')),
+
+   # path('resources/', include('resources.urls')),
+
+  #  path('rooms/', include('room.urls')),
+  #  path('connect/', include('connections.urls')),
+    path('todolist/',include('todolist.urls')),
          
-    )
+    
 ]
