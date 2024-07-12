@@ -23,6 +23,7 @@ class LoginView(APIView):
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
+        
 
         user = User.objects.filter(email=email).first()
 
@@ -30,6 +31,7 @@ class LoginView(APIView):
             payload = {
                 'id': user.id,
                 'email': user.email, 
+                'username': user.username,
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
                 'iat': datetime.datetime.utcnow()
             }
@@ -41,12 +43,28 @@ class LoginView(APIView):
 
         return JsonResponse({'status': False, 'error': 'Invalid email or password'}, status=401)
 
-class UniqueCheckView(APIView):
-    def post(self, request):
-        email = request.data.get('email')
-        contact = request.data.get('contact')
+class UserDetailView(APIView):
+    def get(self, request):
+        token = request.headers.get('Authorization')
 
-        if User.objects.filter(email=email).exists() or User.objects.filter(contact=contact).exists():
-            return JsonResponse({'status': False, 'message': 'Email or contact already exists'})
+        if not token:
+            raise AuthenticationFailed('Token not provided!')
 
-        return JsonResponse({'status': True, 'message': 'Email and contact are unique'})
+        try:
+            payload = jwt.decode(token, 'secret', algorithms=['HS256'])
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationFailed('Token has expired!')
+
+        user = User.objects.filter(id=payload['id']).first()
+
+        if user is None:
+            raise AuthenticationFailed('User not found!')
+
+        user_data = {
+            'username': user.username,
+            'email': user.email
+        }
+
+        return JsonResponse(user_data, status=200)
+
+
