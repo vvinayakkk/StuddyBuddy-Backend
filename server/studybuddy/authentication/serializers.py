@@ -1,20 +1,43 @@
-# serializers.py in Django app
-
 from rest_framework import serializers
 from .models import User
+from connections.models import FriendRequest
+
+class FriendRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FriendRequest
+        fields = '__all__'
 
 class UserSerializer(serializers.ModelSerializer):
+    friends = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    sent_friend_requests = FriendRequestSerializer(many=True, read_only=True)
+    received_friend_requests = FriendRequestSerializer(many=True, read_only=True)
+
     class Meta:
         model = User
-        fields = ['id', 'email','username', 'password']
+        fields = ['id', 'email', 'username', 'department', 'year', 'availability', 'courses', 'preferred_study_methods', 'goals', 'password', 'friends', 'sent_friend_requests', 'received_friend_requests']
         extra_kwargs = {
             'password': {'write_only': True},
         }
 
     def create(self, validated_data):
         password = validated_data.pop('password', None)
-        instance = self.Meta.model(**validated_data)
-        if password is not None:
+        user = User.objects.create(**validated_data)
+        if password:
+            user.set_password(password)
+            user.save()
+        return user
+
+    def update(self, instance, validated_data):
+        instance.email = validated_data.get('email', instance.email)
+        instance.username = validated_data.get('username', instance.username)
+        instance.department = validated_data.get('department', instance.department)
+        instance.year = validated_data.get('year', instance.year)
+        instance.availability = validated_data.get('availability', instance.availability)
+        instance.courses = validated_data.get('courses', instance.courses)
+        instance.preferred_study_methods = validated_data.get('preferred_study_methods', instance.preferred_study_methods)
+        instance.goals = validated_data.get('goals', instance.goals)
+        password = validated_data.get('password')
+        if password:
             instance.set_password(password)
         instance.save()
         return instance

@@ -9,9 +9,13 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
-import os
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
+
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,7 +27,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-3fr_%q88m)p8-yp1c7^af^%(hox8p*9nl2i20goum(+m$%5sg_'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -44,6 +48,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'authentication',
     'todolist',
+    'connections'
+    
   #  'widget_tweaks',
   #  'room',
    
@@ -100,7 +106,7 @@ DATABASES = {
      'ENGINE': 'django.db.backends.postgresql_psycopg2',
      'NAME':'studdybuddy',
      'USER':'studdybuddy',
-     'PASSWORD':'E4hpmcr82@',
+    'PASSWORD':os.getenv('PASSWORD'),
     
      'HOST':'localhost',
      'PORT':'5432',
@@ -160,3 +166,10 @@ FILE_UPLOAD_HANDLERS = [
     'django.core.files.uploadhandler.MemoryFileUploadHandler',
     'django.core.files.uploadhandler.TemporaryFileUploadHandler',
 ]
+
+AUTH_USER_MODEL = 'authentication.User'
+AUTHENTICATION_BACKENDS = [
+ 
+    'django.contrib.auth.backends.ModelBackend',  # Default backend
+]
+
