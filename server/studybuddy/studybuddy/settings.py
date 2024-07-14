@@ -104,13 +104,11 @@ CHANNEL_LAYERS={
 DATABASES = {
     'default': {
      'ENGINE': 'django.db.backends.postgresql_psycopg2',
-     'NAME':'studdybuddy',
-     'USER':'studdybuddy',
-    'PASSWORD':os.getenv('PASSWORD'),
-    
+     'NAME':'study',
+     'USER':'study',
+    'PASSWORD':os.getenv('PASSWORD'),   
      'HOST':'localhost',
-     'PORT':'5432',
-     
+     'PORT':'5432',   
     }
 }
 
