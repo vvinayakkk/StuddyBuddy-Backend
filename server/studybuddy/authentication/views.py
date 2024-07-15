@@ -64,6 +64,7 @@ def get_user_from_token(request):
             return None, {"error": "Invalid token format"}, status.HTTP_403_FORBIDDEN
         
         user = get_object_or_404(User, id=user_id)
+        print(user)
         return user, None, None
     except jwt.ExpiredSignatureError:
         return None, {"error": "Token has expired"}, status.HTTP_403_FORBIDDEN

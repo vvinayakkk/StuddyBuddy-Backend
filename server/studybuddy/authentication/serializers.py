@@ -2,10 +2,18 @@ from rest_framework import serializers
 from .models import User
 from connections.models import FriendRequest
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email']
+
 class FriendRequestSerializer(serializers.ModelSerializer):
+    sender = UserSerializer()
+    receiver = UserSerializer()
+
     class Meta:
         model = FriendRequest
-        fields = '__all__'
+        fields = ['id', 'sender', 'receiver', 'status', 'created_at']
 
 class UserSerializer(serializers.ModelSerializer):
     friends = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
