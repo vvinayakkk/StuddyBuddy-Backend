@@ -48,14 +48,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'authentication',
     'todolist',
-    'connections'
-    
-  #  'widget_tweaks',
-  #  'room',
+    'connections',
+    'channels',
+    'room',
+    'widget_tweaks',
+     'notes'
    
   #  'resources',
-  #  'connections',
-  #  'channels',
+
   #  'notes',
 ]
 
@@ -89,6 +89,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'studybuddy.wsgi.application'
+ASGI_APPLICATION = 'studybuddy.asgi.application'
+
 CHANNEL_LAYERS={
     'default':{
         'BACKEND':'channels_redis.core.RedisChannelLayer',

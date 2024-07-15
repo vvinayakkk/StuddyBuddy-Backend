@@ -23,11 +23,11 @@ urlpatterns = [
     path('',include('authentication.urls')),
     path('connect/', include('connections.urls')),
     path('todolist/',include('todolist.urls')),
-   # path('notes/', include('notes.urls')),
-
+    path('rooms/', include('room.urls')),
+    path('notes/', include('notes.urls')),
    # path('resources/', include('resources.urls')),
 
-  #  path('rooms/', include('room.urls')),
+
   
          
     
