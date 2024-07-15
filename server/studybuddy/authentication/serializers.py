@@ -2,37 +2,45 @@ from rest_framework import serializers
 from .models import User
 from connections.models import FriendRequest
 
-class UserSerializer(serializers.ModelSerializer):
+class UserBasicSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email']
-
+        
 class FriendRequestSerializer(serializers.ModelSerializer):
-    sender = UserSerializer()
-    receiver = UserSerializer()
+    sender = UserBasicSerializer()
+    receiver = UserBasicSerializer()
 
     class Meta:
         model = FriendRequest
         fields = ['id', 'sender', 'receiver', 'status', 'created_at']
-
 class UserSerializer(serializers.ModelSerializer):
-    friends = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    friends = serializers.SerializerMethodField()
     sent_friend_requests = FriendRequestSerializer(many=True, read_only=True)
     received_friend_requests = FriendRequestSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'username', 'department', 'year', 'availability', 'courses', 'preferred_study_methods', 'goals', 'password', 'friends', 'sent_friend_requests', 'received_friend_requests']
+        fields = [
+            'id', 'email', 'username', 'department', 'year', 
+            'availability', 'courses', 'preferred_study_methods', 
+            'goals', 'password', 'friends', 'sent_friend_requests', 
+            'received_friend_requests'
+        ]
         extra_kwargs = {
             'password': {'write_only': True},
         }
+
+    def get_friends(self, obj):
+        friends = obj.friends.all()
+        return UserBasicSerializer(friends, many=True).data
 
     def create(self, validated_data):
         password = validated_data.pop('password', None)
         user = User.objects.create(**validated_data)
         if password:
             user.set_password(password)
-            user.save()
+        user.save()
         return user
 
     def update(self, instance, validated_data):

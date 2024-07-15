@@ -82,6 +82,7 @@ def profile_view_get(request):
     serializer = UserSerializer(user)
     friend_requests = FriendRequest.objects.filter(receiver=user, status='pending')
     friend_requests_serializer = FriendRequestSerializer(friend_requests, many=True)
+    print(friend_requests_serializer.data)
     return Response({
         'user': serializer.data,
         'friend_requests': friend_requests_serializer.data
