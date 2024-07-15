@@ -36,9 +36,10 @@ class User(AbstractUser):
     preferred_study_methods = models.TextField(blank=True)
     goals = models.TextField(blank=True)
     friends = models.ManyToManyField('self', blank=True, symmetrical=False)
+    profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
 
 
-   
+
 
     groups = models.ManyToManyField(
         'auth.Group',

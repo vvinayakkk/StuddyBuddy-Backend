@@ -6,6 +6,13 @@ class UserBasicSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email']
+
+class FriendRequestSenderOnlySerializer(serializers.ModelSerializer):
+    sender = UserBasicSerializer()
+
+    class Meta:
+        model = FriendRequest
+        fields = ['id', 'sender', 'status', 'created_at']
         
 class FriendRequestSerializer(serializers.ModelSerializer):
     sender = UserBasicSerializer()
@@ -18,14 +25,14 @@ class UserSerializer(serializers.ModelSerializer):
     friends = serializers.SerializerMethodField()
     sent_friend_requests = FriendRequestSerializer(many=True, read_only=True)
     received_friend_requests = FriendRequestSerializer(many=True, read_only=True)
-
+    profile_image = serializers.ImageField(required=False)
     class Meta:
         model = User
         fields = [
             'id', 'email', 'username', 'department', 'year', 
             'availability', 'courses', 'preferred_study_methods', 
             'goals', 'password', 'friends', 'sent_friend_requests', 
-            'received_friend_requests'
+            'received_friend_requests','profile_image'
         ]
         extra_kwargs = {
             'password': {'write_only': True},
