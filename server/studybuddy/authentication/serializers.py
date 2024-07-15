@@ -5,7 +5,7 @@ from connections.models import FriendRequest
 class UserBasicSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email']
+        fields = ['id', 'username', 'email','profile_image']
 
 class FriendRequestSenderOnlySerializer(serializers.ModelSerializer):
     sender = UserBasicSerializer()
@@ -44,9 +44,12 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop('password', None)
+        profile_image = validated_data.pop('profile_image', None)
         user = User.objects.create(**validated_data)
         if password:
             user.set_password(password)
+        if profile_image:
+            user.profile_image = profile_image
         user.save()
         return user
 
@@ -60,6 +63,9 @@ class UserSerializer(serializers.ModelSerializer):
         instance.preferred_study_methods = validated_data.get('preferred_study_methods', instance.preferred_study_methods)
         instance.goals = validated_data.get('goals', instance.goals)
         password = validated_data.get('password')
+        profile_image = validated_data.get('profile_image')
+        if profile_image:
+            instance.profile_image = profile_image
         if password:
             instance.set_password(password)
         instance.save()
