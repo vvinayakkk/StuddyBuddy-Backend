@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import AuthenticationFailed
 from .models import User
-from .serializers import UserSerializer
+from .serializers import UserSerializer,ProfileImageSerializer
 from connections.models import FriendRequest
 from connections.serializers import FriendRequestSerializer
 from .managers import CustomUserManager
@@ -98,6 +98,21 @@ def profile_view_put(request):
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+def profile_image_update_view(request):
+    user, error_response, status_code = get_user_from_token(request)
+    if error_response:
+        return Response(error_response, status=status_code)
+    
+    serializer = ProfileImageSerializer(user, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({
+            'message': 'Profile image updated successfully',
+            'profile_image': serializer.data['profile_image']
+        })
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
