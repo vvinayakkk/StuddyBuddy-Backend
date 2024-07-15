@@ -100,15 +100,21 @@ def profile_view_put(request):
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['PUT'])
+@api_view(['POST'])
 def profile_image_update_view(request):
+    print("hi")
+    
     user, error_response, status_code = get_user_from_token(request)
     if error_response:
         return Response(error_response, status=status_code)
-    
+    print(user)
+    print(request.data)
     serializer = ProfileImageSerializer(user, data=request.data, partial=True)
+    print("hi")
     if serializer.is_valid():
+        print("enters")
         serializer.save()
+        print(serializer.data['profile_image'])
         return Response({
             'message': 'Profile image updated successfully',
             'profile_image': serializer.data['profile_image']
