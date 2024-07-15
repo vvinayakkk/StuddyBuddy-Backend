@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from .models import User
 from connections.models import FriendRequest
+import imageio
+from PIL import Image
+import io
 
 class UserBasicSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,7 +22,23 @@ class ProfileImageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['profile_image']       
+        fields = ['profile_image']
+
+    def validate_profile_image(self, value):
+        if value:
+            try:
+                # Check if the uploaded file is an image
+                img = Image.open(value)
+                img.verify()
+            except (IOError, SyntaxError) as e:
+                try:
+                    # Handle AVIF files using imageio
+                    value.seek(0)
+                    img = imageio.imread(value.read(), format='avif')
+                except Exception:
+                    raise serializers.ValidationError("Invalid image format or corrupted image.")
+        return value
+       
 class FriendRequestSerializer(serializers.ModelSerializer):
     sender = UserBasicSerializer()
     receiver = UserBasicSerializer()

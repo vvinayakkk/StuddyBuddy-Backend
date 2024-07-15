@@ -36,7 +36,7 @@ class LoginView(APIView):
                 'id': user.id,
                 'email': user.email, 
                 'username': user.username,
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=180),
                 'iat': datetime.datetime.utcnow()
             }
 
