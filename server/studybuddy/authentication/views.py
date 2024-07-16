@@ -121,6 +121,25 @@ def profile_image_update_view(request):
         })
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET'])
+def profile_view_get(request):
+    user, error_response, status_code = get_user_from_token(request)
+    if error_response:
+        return Response(error_response, status=status_code)
+    
+    serializer = UserSerializer(user)
+    profile_data = serializer.data
+    profile_data['profile_image'] = user.profile_image.url if user.profile_image else None
+    
+    friend_requests = FriendRequest.objects.filter(receiver=user, status='pending')
+    friend_requests_serializer = FriendRequestSerializer(friend_requests, many=True)
+    
+    return Response({
+        'user': profile_data,
+        'friend_requests': friend_requests_serializer.data
+    })
+
+
 @api_view(['POST'])
 def accept_friend_request_view(request, request_id):
     user, error_response, status_code = get_user_from_token(request)
