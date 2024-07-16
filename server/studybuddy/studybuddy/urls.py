@@ -27,11 +27,5 @@ urlpatterns = [
     path('todolist/',include('todolist.urls')),
     path('rooms/', include('room.urls')),
     path('notes/', include('notes.urls')),
-   # path('resources/', include('resources.urls')),
-
-
-  
-         
-    
-]
-+static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)
+   # path('resources/', include('resources.urls')),    
+] + static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)
