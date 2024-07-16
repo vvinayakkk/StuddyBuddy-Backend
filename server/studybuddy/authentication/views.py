@@ -122,7 +122,7 @@ def profile_image_update_view(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
-def profile_view_get(request):
+def profile_view_get2(request):
     user, error_response, status_code = get_user_from_token(request)
     if error_response:
         return Response(error_response, status=status_code)
