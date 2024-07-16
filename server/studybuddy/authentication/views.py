@@ -135,8 +135,7 @@ def profile_view_get(request):
     friend_requests_serializer = FriendRequestSerializer(friend_requests, many=True)
     
     return Response({
-        'user': profile_data,
-        'friend_requests': friend_requests_serializer.data
+        'profile_image':  profile_data['profile_image']
     })
 
 
