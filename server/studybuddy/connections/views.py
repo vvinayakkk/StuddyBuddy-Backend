@@ -71,7 +71,7 @@ def connect(request):
             'courses': profile.courses,
             'preferred_study_methods': profile.preferred_study_methods,
             'goals': profile.goals,
-            'profile_image':profile.profile_image,
+            'profile_image': profile.profile_image.url if profile.profile_image else None,
             'has_pending_request': profile.has_pending_request,
             'is_friend': profile.is_friend,
         })
@@ -117,9 +117,9 @@ def friends(request):
             'year': friend.year,
             'availability': friend.availability,
             'courses': friend.courses,
+            'profile_image': friend.profile_image.url if friend.profile_image else None,
             'preferred_study_methods': friend.preferred_study_methods,
             'goals': friend.goals,
-            'profile_image':friend.profile_image
         })
 
     return Response({
