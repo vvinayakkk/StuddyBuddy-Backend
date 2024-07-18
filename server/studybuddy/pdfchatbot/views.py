@@ -25,16 +25,19 @@ from langchain.schema import AIMessage
 from authentication.models import User
 from .models import ChatMessage
 from .serializers import ChatMessageSerializer
+import logging
+import tensorflow as tf
+# Suppress TensorFlow logging
+tf.get_logger().setLevel(logging.ERROR)
+
+# Set up logging to suppress warnings and info messages
+logging.basicConfig(level=logging.ERROR)
 
 # Load environment variables
 load_dotenv()
 
 # Configure Google Generative AI
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-
-# Set up logging
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 # Load the emotion model and tokenizer
 models_dir = os.path.join(settings.BASE_DIR, 'models')

@@ -52,7 +52,8 @@ INSTALLED_APPS = [
     'channels',
     'room',
     'widget_tweaks',
-     'notes'
+     'notes',
+     'testseries'
    
   #  'resources',
 
