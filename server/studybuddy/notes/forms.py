@@ -12,7 +12,7 @@ class NoteForm(forms.ModelForm):
 
     class Meta:
         model = Note
-        fields = ['title', 'content', 'shared_with']
+        fields = ['title', 'content', 'image', 'document', 'rich_text_content', 'shared_with']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)

@@ -1,6 +1,3 @@
-from django.shortcuts import render
-
-# Create your views here.
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Note
 from .forms import NoteForm, NoteShareForm
@@ -50,10 +47,14 @@ def note_list(request):
             "id": note.id,
             "title": note.title,
             "content": note.content,
+            "image": note.image.url if note.image else None,
+            "document": note.document.url if note.document else None,
+            "rich_text_content": note.rich_text_content,
             "shared_with": [u.email for u in note.shared_with.all()]  # Include shared_with emails
         })
     
     return Response(note_list, status=status.HTTP_200_OK)
+
 @api_view(['GET'])
 def note_detail(request, pk):
     user, error, status_code = get_user_from_token(request)
@@ -68,6 +69,9 @@ def note_detail(request, pk):
         "id": note.id,
         "title": note.title,
         "content": note.content,
+        "image": note.image.url if note.image else None,
+        "document": note.document.url if note.document else None,
+        "rich_text_content": note.rich_text_content,
         "shared_with": [u.username for u in note.shared_with.all()]
     }
     return Response(note_data, status=status.HTTP_200_OK)
@@ -77,13 +81,11 @@ def note_create(request):
     user, error, status_code = get_user_from_token(request)
     if error:
         return Response(error, status=status_code)
-    print("hi")
-    print(user)
-    print(request.data)
+    
     data = request.data.copy()
     data['shared_with'] = request.data.get('shared_with', [])
 
-    form = NoteForm(data, user=user)
+    form = NoteForm(data, request.FILES, user=user)
 
     if form.is_valid():
         note = form.save(commit=False)
@@ -92,7 +94,7 @@ def note_create(request):
         users_to_share_with = form.cleaned_data.get('shared_with')
         if users_to_share_with:
             note.shared_with.add(*users_to_share_with)
-        return Response({"id": note.id, "title": note.title, "content": note.content}, status=status.HTTP_201_CREATED)
+        return Response({"id": note.id, "title": note.title, "content": note.content, "image": note.image.url if note.image else None, "document": note.document.url if note.document else None, "rich_text_content": note.rich_text_content}, status=status.HTTP_201_CREATED)
     else:
         return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -117,7 +119,7 @@ def note_update(request, pk):
     note.shared_with.add(*User.objects.filter(pk__in=new_shared_with))
     
     # Update other fields using the NoteForm as before
-    form = NoteForm(data, instance=note, user=user)
+    form = NoteForm(data, request.FILES, instance=note, user=user)
     if form.is_valid():
         # Restore previous shared_with users if form validation succeeds
         note.shared_with.add(*existing_shared_with)
@@ -126,36 +128,32 @@ def note_update(request, pk):
         note.last_modified_by = user
         note.save()
         
-        return Response({"id": note.id, "title": note.title, "content": note.content}, status=status.HTTP_200_OK)
+        return Response({"id": note.id, "title": note.title, "content": note.content, "image": note.image.url if note.image else None, "document": note.document.url if note.document else None, "rich_text_content": note.rich_text_content}, status=status.HTTP_200_OK)
     else:
         # Restore previous shared_with users if form validation fails
         note.shared_with.add(*existing_shared_with)
         
         return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 @api_view(['POST'])
 def note_share(request, pk):
     user, error, status_code = get_user_from_token(request)
-    print(user)
     if user is None:
         logger.error(f"User could not be retrieved from token: {error}")
         return Response({"error": "Authentication failed"}, status=status.HTTP_401_UNAUTHORIZED)
     note = get_object_or_404(Note, pk=pk)
-    print(note)
-    print(pk)
+    
     data = request.data.copy()
     user_ids = data.get('users', [])
     users = User.objects.filter(id__in=user_ids)
-    print(users)
+    
     if not users:
         return Response({"error": "No valid users found"}, status=status.HTTP_400_BAD_REQUEST)
-    print("hi")
+    
     data['users'] = [user.pk for user in users] 
-    print(data['users'])
+    
     if request.method == 'POST':
         form = NoteShareForm(data, note_instance=note, initial={'users': users})
-        print(f"Form data: {form.data}")
         if form.is_valid():
             users_to_share_with = form.cleaned_data['users']
             note.shared_with.add(*users_to_share_with)
@@ -165,7 +163,6 @@ def note_share(request, pk):
             return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
 
     return Response({"error": "Invalid request method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
 
 @api_view(['DELETE'])
 def note_delete(request, pk):
