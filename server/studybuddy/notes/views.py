@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Note
+from .models import Note,NoteImage, NoteDocument
 from .forms import NoteForm, NoteShareForm
 from authentication.models import User  
 from rest_framework.decorators import api_view
@@ -81,11 +81,10 @@ def note_create(request):
     user, error, status_code = get_user_from_token(request)
     if error:
         return Response(error, status=status_code)
-    print(user)
+
     data = request.data.copy()
-    print(data)
-    shared_with_ids = request.data.get('shared_with', [])
-    print(shared_with_ids)
+    shared_with_ids = data.get('shared_with', [])
+    
     # Ensure shared_with_ids is a list and contains valid user IDs
     if isinstance(shared_with_ids, list):
         shared_with_users = User.objects.filter(id__in=shared_with_ids)
@@ -96,19 +95,38 @@ def note_create(request):
 
     # Update data with valid shared_with users
     data['shared_with'] = [user.id for user in shared_with_users]
-    print("hi")
-    form = NoteForm(data, request.FILES, user=user)
+
+    form = NoteForm(data, user=user)
 
     if form.is_valid():
         note = form.save(commit=False)
         note.created_by = user
         note.save()
-        users_to_share_with = form.cleaned_data.get('shared_with')
-        if users_to_share_with:
-            note.shared_with.add(*users_to_share_with)
-        return Response({"id": note.id, "title": note.title, "content": note.content, "image": note.image.url if note.image else None, "document": note.document.url if note.document else None, "rich_text_content": note.rich_text_content,"shared_with": [u.email for u in note.shared_with.all()]}, status=status.HTTP_201_CREATED)
+        
+        # Add shared_with users
+        if shared_with_users:
+            note.shared_with.add(*shared_with_users)
+
+        # Handle multiple images
+        for image in request.FILES.getlist('images'):
+            NoteImage.objects.create(note=note, image=image)
+
+        # Handle multiple documents
+        for document in request.FILES.getlist('documents'):
+            NoteDocument.objects.create(note=note, document=document)
+
+        return Response({
+            "id": note.id,
+            "title": note.title,
+            "content": note.content,
+            "images": [img.image.url for img in note.images.all()],
+            "documents": [doc.document.url for doc in note.documents.all()],
+            "rich_text_content": note.rich_text_content,
+            "shared_with": [u.email for u in note.shared_with.all()]
+        }, status=status.HTTP_201_CREATED)
     else:
         return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['POST'])
 def note_update(request, pk):

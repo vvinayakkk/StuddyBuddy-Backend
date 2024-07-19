@@ -1,5 +1,5 @@
 from django import forms
-from .models import Note
+from .models import Note,NoteImage, NoteDocument
 from authentication.models import User  # Use custom User model
 from django.db.models import Q
 
@@ -12,11 +12,21 @@ class NoteForm(forms.ModelForm):
 
     class Meta:
         model = Note
-        fields = ['title', 'content', 'image', 'document', 'rich_text_content', 'shared_with']
+        fields = ['title', 'content','rich_text_content', 'shared_with']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super(NoteForm, self).__init__(*args, **kwargs)
+
+class NoteImageForm(forms.ModelForm):
+    class Meta:
+        model = NoteImage
+        fields = ['image']
+
+class NoteDocumentForm(forms.ModelForm):
+    class Meta:
+        model = NoteDocument
+        fields = ['document']
 
 class NoteShareForm(forms.ModelForm):
     users = forms.ModelMultipleChoiceField(queryset=User.objects.all(), widget=forms.SelectMultiple)
