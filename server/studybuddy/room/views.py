@@ -1,29 +1,27 @@
-from django.shortcuts import render
+# room/views.py
 
-# Create your views here.
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from django.shortcuts import get_object_or_404
-from .models import Room
+from .models import Room, Message
 from authentication.models import User
-import jwt
 from django.conf import settings
+import jwt
 
-# Helper function to get user from the token
 def get_user_from_token(request):
     try:
         authorization_header = request.headers.get('Authorization')
         if not authorization_header:
             return None, {"error": "Authorization header missing"}, status.HTTP_401_UNAUTHORIZED
-        
+
         token = authorization_header.split(' ')[1]
         decoded_token = jwt.decode(jwt=token, key=settings.SECRET_KEY, algorithms=['HS256'])
-        
+
         user_id = decoded_token.get('id')
         if not user_id:
             return None, {"error": "Invalid token format"}, status.HTTP_403_FORBIDDEN
-        
+
         user = get_object_or_404(User, id=user_id)
         return user, None, None
     except jwt.ExpiredSignatureError:
@@ -34,20 +32,45 @@ def get_user_from_token(request):
         return None, {"error": str(e)}, status.HTTP_403_FORBIDDEN
 
 @api_view(['GET'])
-def rooms(request):
-    user, error_response, status_code = get_user_from_token(request)
-    if error_response:
-        return Response(error_response, status=status_code)
-
+def room_list(request):
     rooms = Room.objects.all()
-    serialized_rooms = [{'id': room.id, 'name': room.name, 'slug': room.slug} for room in rooms]
-    return Response({'rooms': serialized_rooms})
+    return Response([{'id': room.id, 'name': room.name} for room in rooms], status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-def room(request, room_name):
-    user, error_response, status_code = get_user_from_token(request)
-    if error_response:
-        return Response(error_response, status=status_code)
+def room_messages(request, room_id):
+    room = get_object_or_404(Room, id=room_id)
+    messages = room.messages.order_by('timestamp')
+    return Response([
+        {'user': message.user.username, 'content': message.content, 'timestamp': message.timestamp}
+        for message in messages
+    ], status=status.HTTP_200_OK)
 
-    username = user.username
-    return Response({'room_name': room_name, 'username': username})
+@api_view(['POST'])
+def create_room(request):
+    user, error, status_code = get_user_from_token(request)
+    if error:
+        return Response(error, status=status_code)
+
+    room_name = request.data.get('name')
+    if Room.objects.filter(name=room_name).exists():
+        return Response({'error': 'Room already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+    room = Room.objects.create(name=room_name)
+    return Response({'id': room.id, 'name': room.name}, status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+def send_message(request):
+    user, error, status_code = get_user_from_token(request)
+    if error:
+        return Response(error, status=status_code)
+
+    room_id = request.data.get('room_id')
+    content = request.data.get('content')
+    room = get_object_or_404(Room, id=room_id)
+
+    message = Message.objects.create(user=user, room=room, content=content)
+    return Response({
+        'user': message.user.username,
+        'content': message.content,
+        'timestamp': message.timestamp
+    }, status=status.HTTP_201_CREATED)

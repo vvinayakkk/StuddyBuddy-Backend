@@ -4,7 +4,7 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from room.routing import websocket_urlpatterns
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'UniVerse.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'studybuddy.settings')
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
