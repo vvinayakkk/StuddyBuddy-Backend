@@ -94,7 +94,7 @@ def note_create(request):
         users_to_share_with = form.cleaned_data.get('shared_with')
         if users_to_share_with:
             note.shared_with.add(*users_to_share_with)
-        return Response({"id": note.id, "title": note.title, "content": note.content, "image": note.image.url if note.image else None, "document": note.document.url if note.document else None, "rich_text_content": note.rich_text_content}, status=status.HTTP_201_CREATED)
+        return Response({"id": note.id, "title": note.title, "content": note.content, "image": note.image.url if note.image else None, "document": note.document.url if note.document else None, "rich_text_content": note.rich_text_content,"selectedIUser": [u.email for u in note.shared_with.all()]}, status=status.HTTP_201_CREATED)
     else:
         return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -128,7 +128,7 @@ def note_update(request, pk):
         note.last_modified_by = user
         note.save()
         
-        return Response({"id": note.id, "title": note.title, "content": note.content, "image": note.image.url if note.image else None, "document": note.document.url if note.document else None, "rich_text_content": note.rich_text_content}, status=status.HTTP_200_OK)
+        return Response({"id": note.id, "title": note.title, "content": note.content, "image": note.image.url if note.image else None, "document": note.document.url if note.document else None, "rich_text_content": note.rich_text_content,"selectedIUser": [u.email for u in note.shared_with.all()]}, status=status.HTTP_200_OK)
     else:
         # Restore previous shared_with users if form validation fails
         note.shared_with.add(*existing_shared_with)
