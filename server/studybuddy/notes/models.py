@@ -10,6 +10,7 @@ class Note(models.Model):
     shared_with = models.ManyToManyField(User, related_name='shared_notes', blank=True)
     last_modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='modified_notes')
     rich_text_content = models.TextField(blank=True, null=True)  # Rich text content
+    drawing = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.title

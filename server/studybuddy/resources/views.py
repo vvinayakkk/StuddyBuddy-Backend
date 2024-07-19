@@ -1,18 +1,13 @@
-from django.shortcuts import render
-
-# Create your views here.
+from django.http import FileResponse, JsonResponse
+from django.shortcuts import render, get_object_or_404
+from .models import Resource, Bookmark
+from .serializers import ResourceSerializer, BookmarkSerializer
+from authentication.models import User
+from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Resource, Domain, UserResource
-from .forms import ResourceForm
-from django.shortcuts import get_object_or_404
-from django.conf import settings
 import jwt
-from authentication.models import User
-from django.http import FileResponse
-from django.core.exceptions import ObjectDoesNotExist
-
 
 def get_user_from_token(request):
     try:
@@ -37,130 +32,72 @@ def get_user_from_token(request):
         return None, {"error": str(e)}, status.HTTP_403_FORBIDDEN
 
 @api_view(['GET'])
-def index(request):
-    user, error, error_status = get_user_from_token(request)
+def resource_list(request):
+    user, error, status_code = get_user_from_token(request)
     if error:
-        return Response(error, status=error_status)
-
+        return Response(error, status=status_code)
+    
     resources = Resource.objects.all()
-    user_resources = UserResource.objects.filter(user=user)
-    saved_resource_ids = [user_resource.resource.uuid for user_resource in user_resources if user_resource.saved]
-    domains = Domain.objects.all().order_by('name')
-
-    response_data = {
-        'resources': list(resources.values()),
-        'saved_resource_ids': saved_resource_ids,
-        'domains': list(domains.values())
-    }
-
-    return Response(response_data, status=status.HTTP_200_OK)
+    serializer = ResourceSerializer(resources, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-def category_page(request, resource_path):
-    user, error, error_status = get_user_from_token(request)
+def resource_detail(request, pk):
+    user, error, status_code = get_user_from_token(request)
     if error:
-        return Response(error, status=error_status)
+        return Response(error, status=status_code)
+    
+    resource = get_object_or_404(Resource, pk=pk)
+    serializer = ResourceSerializer(resource)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
-    resources = Resource.objects.all()
-    user_resources = UserResource.objects.filter(user=user)
-    saved_resource_ids = [user_resource.resource.uuid for user_resource in user_resources if user_resource.saved]
-    domains = Domain.objects.all().order_by('name')
+@api_view(['POST'])
+def resource_create(request):
+    user, error, status_code = get_user_from_token(request)
+    if error:
+        return Response(error, status=status_code)
+    
+    data = request.data.copy()
+    data['created_by'] = user.id
+    serializer = ResourceSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    response_data = {
-        'resources': list(resources.values()),
-        'saved_resource_ids': saved_resource_ids,
-        'domains': list(domains.values())
-    }
-
-    return Response(response_data, status=status.HTTP_200_OK)
+@api_view(['POST'])
+def resource_bookmark(request, pk):
+    user, error, status_code = get_user_from_token(request)
+    if error:
+        return Response(error, status=status_code)
+    
+    resource = get_object_or_404(Resource, pk=pk)
+    bookmark, created = Bookmark.objects.get_or_create(user=user, resource=resource)
+    if created:
+        return Response({"status": "bookmarked"}, status=status.HTTP_201_CREATED)
+    else:
+        return Response({"status": "already bookmarked"}, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-def file_page(request, resource_path, category):
-    user, error, error_status = get_user_from_token(request)
+def bookmark_list(request):
+    user, error, status_code = get_user_from_token(request)
     if error:
-        return Response(error, status=error_status)
-
-    resources = Resource.objects.filter(category=category)
-    converted_resource_paths = [convert_to_lower_and_hyphen(resource.domain.name) for resource in resources]
-    filtered_resources = [resource for resource, path in zip(resources, converted_resource_paths) if path == resource_path]
-
-    user_resources = UserResource.objects.filter(user=user, resource__in=filtered_resources)
-    saved_resource_ids = [user_resource.resource.uuid for user_resource in user_resources if user_resource.saved]
-
-    resources_all = Resource.objects.all()
-    user_resources_all = UserResource.objects.filter(user=user)
-    saved_resource_ids_all = [user_resource.resource.uuid for user_resource in user_resources_all if user_resource.saved]
-    domains = Domain.objects.all().order_by('name')
-
-    response_data = {
-        'resource_path': resource_path,
-        'category': category,
-        'resources': list(filtered_resources.values()),
-        'saved_resource_ids': saved_resource_ids,
-        'resources_all': list(resources_all.values()),
-        'saved_resource_ids_all': saved_resource_ids_all,
-        'domains': list(domains.values())
-    }
-
-    return Response(response_data, status=status.HTTP_200_OK)
-
-def convert_to_lower_and_hyphen(domain_name):
-    return domain_name.strip().replace(' ', '-').lower()
+        return Response(error, status=status_code)
+    
+    bookmarks = Bookmark.objects.filter(user=user)
+    serializer = BookmarkSerializer(bookmarks, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-def download_resource(request, resource_uuid):
-    user, error, error_status = get_user_from_token(request)
+def resource_download(request, pk):
+    user, error, status_code = get_user_from_token(request)
     if error:
-        return Response(error, status=error_status)
+        return Response(error, status=status_code)
 
-    resource = get_object_or_404(Resource, uuid=resource_uuid)
-    file_path = resource.file.path  # Assuming your resource model has a 'file' field
-    return FileResponse(open(file_path, 'rb'), as_attachment=True)
-
-@api_view(['POST'])
-def save_resource(request, resource_uuid):
-    user, error, error_status = get_user_from_token(request)
-    if error:
-        return Response(error, status=error_status)
-
-    resource = get_object_or_404(Resource, uuid=resource_uuid)
-    user_resource, created = UserResource.objects.get_or_create(user=user, resource=resource)
-    if not created:
-        user_resource.saved = True
-        user_resource.save()
-    return Response({"message": "Resource saved successfully"}, status=status.HTTP_200_OK)
-
-@api_view(['POST'])
-def unsave_resource(request, resource_uuid):
-    user, error, error_status = get_user_from_token(request)
-    if error:
-        return Response(error, status=error_status)
-
-    resource = get_object_or_404(Resource, uuid=resource_uuid)
-    user_resource = get_object_or_404(UserResource, user=user, resource=resource)
-    user_resource.saved = False
-    user_resource.save()
-    return Response({"message": "Resource unsaved successfully"}, status=status.HTTP_200_OK)
-
-@api_view(['POST'])
-def res_form(request):
-    user, error, error_status = get_user_from_token(request)
-    if error:
-        return Response(error, status=error_status)
-
-    if request.method == 'POST':
-        form = ResourceForm(request.POST, request.FILES)
-        if form.is_valid():
-            resource = form.save(commit=False)
-            resource.uploader = user
-
-            domain_name = form.cleaned_data.get('domain')
-            try:
-                domain = Domain.objects.get(name=domain_name)
-                resource.domain = domain
-            except ObjectDoesNotExist:
-                return Response({"error": "Domain does not exist"}, status=status.HTTP_400_BAD_REQUEST)
-
-            resource.save()
-            return Response({"message": "Resource uploaded successfully"}, status=status.HTTP_201_CREATED)
-    return Response({"error": "Invalid form data"}, status=status.HTTP_400_BAD_REQUEST)
+    resource = get_object_or_404(Resource, pk=pk)
+    if resource.resource_type == 'pdf' and resource.file:
+        response = FileResponse(resource.file.open(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{resource.file.name}"'
+        return response
+    else:
+        return Response({"error": "Resource not available for download"}, status=status.HTTP_400_BAD_REQUEST)

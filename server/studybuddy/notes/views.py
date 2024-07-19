@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Note,NoteImage, NoteDocument
+from .models import Note, NoteImage, NoteDocument
 from .forms import NoteForm, NoteShareForm
-from authentication.models import User  
+from authentication.models import User
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -47,9 +47,10 @@ def note_list(request):
             "id": note.id,
             "title": note.title,
             "content": note.content,
-            "image": note.image.url if note.image else None,
-            "document": note.document.url if note.document else None,
+            "images": [img.image.url for img in note.images.all()],
+            "documents": [doc.document.url for doc in note.documents.all()],
             "rich_text_content": note.rich_text_content,
+            "drawing": note.drawing,
             "shared_with": [u.email for u in note.shared_with.all()]  # Include shared_with emails
         })
     
@@ -69,9 +70,10 @@ def note_detail(request, pk):
         "id": note.id,
         "title": note.title,
         "content": note.content,
-        "image": note.image.url if note.image else None,
-        "document": note.document.url if note.document else None,
+        "images": [img.image.url for img in note.images.all()],
+        "documents": [doc.document.url for doc in note.documents.all()],
         "rich_text_content": note.rich_text_content,
+        "drawing": note.drawing,
         "shared_with": [u.username for u in note.shared_with.all()]
     }
     return Response(note_data, status=status.HTTP_200_OK)
@@ -122,11 +124,11 @@ def note_create(request):
             "images": [img.image.url for img in note.images.all()],
             "documents": [doc.document.url for doc in note.documents.all()],
             "rich_text_content": note.rich_text_content,
+            "drawing": note.drawing,
             "shared_with": [u.email for u in note.shared_with.all()]
         }, status=status.HTTP_201_CREATED)
     else:
         return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['POST'])
 def note_update(request, pk):
@@ -158,7 +160,16 @@ def note_update(request, pk):
         note.last_modified_by = user
         note.save()
         
-        return Response({"id": note.id, "title": note.title, "content": note.content, "image": note.image.url if note.image else None, "document": note.document.url if note.document else None, "rich_text_content": note.rich_text_content,"shared_with": [u.email for u in note.shared_with.all()]}, status=status.HTTP_200_OK)
+        return Response({
+            "id": note.id,
+            "title": note.title,
+            "content": note.content,
+            "images": [img.image.url for img in note.images.all()],
+            "documents": [doc.document.url for doc in note.documents.all()],
+            "rich_text_content": note.rich_text_content,
+            "drawing": note.drawing,
+            "shared_with": [u.email for u in note.shared_with.all()]
+        }, status=status.HTTP_200_OK)
     else:
         # Restore previous shared_with users if form validation fails
         note.shared_with.add(*existing_shared_with)

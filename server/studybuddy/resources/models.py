@@ -1,53 +1,32 @@
 from django.db import models
-
-# Create your models here.
-from django.db import models
-from django.contrib.auth.models import User
-import uuid
-from datetime import datetime
-
-
-class Domain(models.Model):
-    uuid = models.UUIDField(default=uuid.uuid4, unique=True)
-    name = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.name
+from authentication.models import User
+from testseries.models import Subject, Subdomain, Chapter  # Assuming these models are in the testseries app
 
 class Resource(models.Model):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    STUDY_GUIDES = 'Study Guides'
-    LECTURE_NOTES = 'Lecture Notes'
-    PRACTICE_EXAMS = 'Practice Exams'
-    USEFUL_WEBSITES = 'Useful Websites'
+    RESOURCE_TYPES = (
+        ('youtube', 'YouTube Link'),
+        ('pdf', 'PDF File'),
+        ('link', 'Anonymous Link'),
+    )
 
-    CATEGORY_CHOICES = [
-        (STUDY_GUIDES, 'Study Guides'),
-        (LECTURE_NOTES, 'Lecture Notes'),
-        (PRACTICE_EXAMS, 'Practice Exams'),
-        (USEFUL_WEBSITES, 'Useful Websites'),
-    ]
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    resource_type = models.CharField(max_length=10, choices=RESOURCE_TYPES)
+    url = models.URLField(blank=True, null=True)  # For YouTube and anonymous links
+    file = models.FileField(upload_to='resources/files/', blank=True, null=True)  # For PDF files
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    subdomain = models.ForeignKey(Subdomain, on_delete=models.CASCADE)
+    chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    title = models.CharField(max_length=100)
-    description = models.TextField()
-    uploader = models.ForeignKey(User, on_delete=models.CASCADE)
-    file = models.FileField(upload_to='resources/')
-    category = models.CharField(max_length=100, choices=CATEGORY_CHOICES)
-    domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
-    upload_date = models.DateTimeField(default=datetime.now)
-    
     def __str__(self):
         return self.title
-    
- 
-    
 
-class UserResource(models.Model):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='domains')
-    resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name='interests')
-    saved = models.BooleanField(default=False)
+class Bookmark(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    resource = models.ForeignKey(Resource, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        unique_together = ['user', 'resource']
-
+    def __str__(self):
+        return f"{self.user.username} bookmarked {self.resource.title}"

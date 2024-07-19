@@ -1,26 +1,11 @@
 from django.contrib import admin
+from .models import Resource, Bookmark
 
-# Register your models here.
-from django.contrib import admin
-from .models import Domain, Resource, UserResource
-
-class DomainAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
-
+@admin.register(Resource)
 class ResourceAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category', 'domain', 'uploader', 'upload_date')
-    search_fields = ('title', 'description')
-    list_filter = ('category', 'domain', 'upload_date')
-    date_hierarchy = 'upload_date'
-    ordering = ('-upload_date',)
+    list_display = ['title', 'resource_type', 'subject', 'subdomain', 'chapter', 'created_by', 'created_at']
+    search_fields = ['title', 'description']
 
-class UserResourceAdmin(admin.ModelAdmin):
-    list_display = ('user', 'resource', 'saved')
-    search_fields = ('user__username', 'resource__title')
-    list_filter = ('saved',)
-    ordering = ('user', 'resource')
-
-admin.site.register(Domain, DomainAdmin)
-admin.site.register(Resource, ResourceAdmin)
-admin.site.register(UserResource, UserResourceAdmin)
+@admin.register(Bookmark)
+class BookmarkAdmin(admin.ModelAdmin):
+    list_display = ['user', 'resource', 'created_at']

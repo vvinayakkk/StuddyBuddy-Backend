@@ -53,11 +53,9 @@ INSTALLED_APPS = [
     'room',
     'widget_tweaks',
      'notes',
-     'testseries'
-   
-  #  'resources',
+     'testseries',
+     'resources',
 
-  #  'notes',
 ]
 
 MIDDLEWARE = [

@@ -1,6 +1,6 @@
 from django import forms
-from .models import Note,NoteImage, NoteDocument
-from authentication.models import User  # Use custom User model
+from .models import Note, NoteImage, NoteDocument
+from authentication.models import User
 from django.db.models import Q
 
 class NoteForm(forms.ModelForm):
@@ -9,10 +9,14 @@ class NoteForm(forms.ModelForm):
         required=False,
         widget=forms.CheckboxSelectMultiple
     )
+    drawing = forms.CharField(
+        widget=forms.HiddenInput(),  # Use hidden input for base64 drawing data
+        required=False
+    )
 
     class Meta:
         model = Note
-        fields = ['title', 'content','rich_text_content', 'shared_with']
+        fields = ['title', 'content', 'rich_text_content', 'drawing', 'shared_with']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -29,7 +33,10 @@ class NoteDocumentForm(forms.ModelForm):
         fields = ['document']
 
 class NoteShareForm(forms.ModelForm):
-    users = forms.ModelMultipleChoiceField(queryset=User.objects.all(), widget=forms.SelectMultiple)
+    users = forms.ModelMultipleChoiceField(
+        queryset=User.objects.all(),
+        widget=forms.SelectMultiple
+    )
 
     def __init__(self, *args, **kwargs):
         note_instance = kwargs.pop('note_instance', None)
