@@ -6,6 +6,7 @@ from .models import Room, Message
 from authentication.models import User
 from django.conf import settings
 import jwt
+from channels.db import database_sync_to_async
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -36,9 +37,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not user:
             return
 
-        room = Room.objects.get(name=self.room_name)
-        message_obj = Message.objects.create(user=user, room=room, content=message)
-
+        room = await database_sync_to_async(Room.objects.get)(name=self.room_name)
+        message_obj = await database_sync_to_async(Message.objects.create)(user=user, room=room, content=message)
         # Broadcast message to room
         await self.channel_layer.group_send(
             self.room_group_name,

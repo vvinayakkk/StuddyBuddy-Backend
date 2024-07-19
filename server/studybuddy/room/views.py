@@ -55,7 +55,7 @@ def create_room(request):
     if Room.objects.filter(name=room_name).exists():
         return Response({'error': 'Room already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-    room = Room.objects.create(name=room_name)
+    room = Room.objects.create(name=room_name,created_by=user)
     return Response({'id': room.id, 'name': room.name}, status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
