@@ -81,10 +81,22 @@ def note_create(request):
     user, error, status_code = get_user_from_token(request)
     if error:
         return Response(error, status=status_code)
-    
+    print(user)
     data = request.data.copy()
-    data['shared_with'] = request.data.get('shared_with', [])
+    print(data)
+    shared_with_ids = request.data.get('shared_with', [])
+    print(shared_with_ids)
+    # Ensure shared_with_ids is a list and contains valid user IDs
+    if isinstance(shared_with_ids, list):
+        shared_with_users = User.objects.filter(id__in=shared_with_ids)
+        if shared_with_ids and len(shared_with_ids) != len(shared_with_users):
+            return Response({"error": "One or more user IDs in shared_with are invalid"}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        shared_with_users = []
 
+    # Update data with valid shared_with users
+    data['shared_with'] = [user.id for user in shared_with_users]
+    print("hi")
     form = NoteForm(data, request.FILES, user=user)
 
     if form.is_valid():

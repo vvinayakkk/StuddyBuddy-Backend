@@ -9,7 +9,7 @@ class Note(models.Model):
     image = models.ImageField(upload_to='notes/images/', blank=True, null=True)  # Image upload
     document = models.FileField(upload_to='notes/documents/', blank=True, null=True)  # Document upload
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_notes')
-    shared_with = models.ManyToManyField(User, related_name='shared_notes')
+    shared_with = models.ManyToManyField(User, related_name='shared_notes',blank=True)
     last_modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='modified_notes')
     rich_text_content = models.TextField(blank=True, null=True)  # Rich text content
 
