@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     'todolist',
     'connections',
     'channels',
-    'room',
     'widget_tweaks',
      'notes',
      'testseries',
