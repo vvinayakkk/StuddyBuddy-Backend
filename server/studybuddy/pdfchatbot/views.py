@@ -1,36 +1,30 @@
 import os
 import json
-import pickle
-import numpy as np
-import jwt
 import logging
 from dotenv import load_dotenv
-from datetime import datetime, timedelta
 from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework import status
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.models import load_model
+import jwt
+from datetime import datetime, timedelta
 import PyPDF2
 import google.generativeai as genai
+from langchain.schema import AIMessage
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
-from langchain.schema import AIMessage
 from authentication.models import User
 from .models import ChatMessage
 from .serializers import ChatMessageSerializer
 import logging
 import tensorflow as tf
-# Suppress TensorFlow logging
-tf.get_logger().setLevel(logging.ERROR)
-
-# Set up logging to suppress warnings and info messages
+# Set up logging
+logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.ERROR)
 
 # Load environment variables
@@ -38,12 +32,6 @@ load_dotenv()
 
 # Configure Google Generative AI
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-
-# Load the emotion model and tokenizer
-models_dir = os.path.join(settings.BASE_DIR, 'models')
-emotion_model = load_model(os.path.join(models_dir, 'tweet_emo.h5'))
-with open(os.path.join(models_dir, 'tokenizer.pickle'), 'rb') as handle:
-    tokenizer = pickle.load(handle)
 
 @csrf_exempt
 def upload_pdfs(request):
@@ -138,19 +126,6 @@ def user_input(user_question):
     response = chain({"input_documents": docs, "question": user_question}, return_only_outputs=True)
     return response.get("output_text", "No response generated.")
 
-def predict_emotion(text, model, tokenizer):
-    """Predicts the emotion of a text using a Keras model."""
-    emotion_to_number = {'sadness': 0, 'joy': 1, 'surprise': 2, 'love': 3, 'anger': 4, 'fear': 5}
-    index_to_class = {v: k for k, v in emotion_to_number.items()}
-
-    padded_text = pad_sequences(tokenizer.texts_to_sequences([text]), maxlen=50, padding='post', truncating='post')[0]
-
-    prediction = model.predict(np.expand_dims(padded_text, axis=0))[0]
-
-    predicted_class = index_to_class[np.argmax(prediction).astype('uint8')]
-
-    return predicted_class
-
 def get_user_from_token(request):
     try:
         authorization_header = request.headers.get('Authorization')
@@ -175,6 +150,7 @@ def get_user_from_token(request):
 
 @api_view(['POST'])
 def chat(request):
+    print("hi")
     user, error_response, status_code = get_user_from_token(request)
     if error_response:
         return JsonResponse(error_response, status=status_code)
@@ -182,16 +158,13 @@ def chat(request):
     question = request.data.get('question')
     model = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.3)
 
-    # Predict emotion of the question
-    emotion = predict_emotion(question, emotion_model, tokenizer)
-
     # Get recent chat messages within the last 1 hour
     one_hour_ago = datetime.now() - timedelta(hours=1)
     recent_messages = ChatMessage.objects.filter(user=user, timestamp__gte=one_hour_ago).order_by('-timestamp')[:10]
 
     # Prepare the prompt with recent messages
     recent_chats = "\n".join([f"User: {msg.question}\nBot: {msg.response}" for msg in recent_messages])
-    prompt = f"Generate an accurate response considering the following emotion and question. Emotion: {emotion}. Question: {question}\n\nRecent Chats:\n{recent_chats}\n\nQuestion: {question}"
+    prompt = f"Generate an accurate response considering the question.\n\nRecent Chats:\n{recent_chats}\n\nQuestion: {question}"
 
     messages = [{"role": "user", "content": prompt}]
 
@@ -201,7 +174,7 @@ def chat(request):
         response_text = response.content if isinstance(response, AIMessage) else str(response)
 
         # Save the chat message to the database
-        chat_message = ChatMessage(user=user, question=question, emotion=emotion, response=response_text)
+        chat_message = ChatMessage(user=user, question=question, response=response_text)
         chat_message.save()
 
         return JsonResponse({'answer': response_text})
