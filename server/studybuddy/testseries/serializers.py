@@ -33,7 +33,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class TestSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True)
-    shared_with = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    
 
 
     class Meta:
