@@ -141,24 +141,29 @@ def note_update(request, pk):
         return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
     
     data = request.data.copy()
-    new_shared_with = request.data.get('shared_with', [])
+    new_shared_with = data.get('shared_with', [])
     
-    # Retrieve existing shared_with users
-    existing_shared_with = list(note.shared_with.all())
-    
-    # Update shared_with directly
+    # Update shared_with users
     note.shared_with.clear()
     note.shared_with.add(*User.objects.filter(pk__in=new_shared_with))
     
-    # Update other fields using the NoteForm as before
-    form = NoteForm(data, request.FILES, instance=note, user=user)
+    form = NoteForm(data, instance=note, user=user)
     if form.is_valid():
-        # Restore previous shared_with users if form validation succeeds
-        note.shared_with.add(*existing_shared_with)
-        
         note = form.save(commit=False)
         note.last_modified_by = user
         note.save()
+        
+        # Handle multiple images (remove existing ones if necessary)
+        if request.FILES.getlist('images'):
+            note.images.all().delete()  # Remove existing images if new ones are provided
+            for image in request.FILES.getlist('images'):
+                NoteImage.objects.create(note=note, image=image)
+        
+        # Handle multiple documents (remove existing ones if necessary)
+        if request.FILES.getlist('documents'):
+            note.documents.all().delete()  # Remove existing documents if new ones are provided
+            for document in request.FILES.getlist('documents'):
+                NoteDocument.objects.create(note=note, document=document)
         
         return Response({
             "id": note.id,
@@ -171,9 +176,6 @@ def note_update(request, pk):
             "shared_with": [u.email for u in note.shared_with.all()]
         }, status=status.HTTP_200_OK)
     else:
-        # Restore previous shared_with users if form validation fails
-        note.shared_with.add(*existing_shared_with)
-        
         return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])

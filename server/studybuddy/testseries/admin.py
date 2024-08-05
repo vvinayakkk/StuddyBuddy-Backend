@@ -12,13 +12,13 @@ class QuestionAdmin(admin.ModelAdmin):
 
 class TestAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'name', 'created_at', 'duration', 'score')
-    list_filter = ('user', 'created_at', 'duration')
+    list_filter = ('user', 'created_at', 'duration',)
     search_fields = ('name',)
-    filter_horizontal = ('questions', 'shared_with') 
+    filter_horizontal = ('questions',) 
 
 class AnswerAdmin(admin.ModelAdmin):
     list_display = ('id', 'test', 'question', 'selected_option', 'correct')
-    list_filter = ('test', 'question')
+    list_filter = ('test', 'question',)
     search_fields = ('selected_option',)
 
 class SubjectAdmin(admin.ModelAdmin):

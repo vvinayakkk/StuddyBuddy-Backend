@@ -22,6 +22,7 @@ class NoteForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super(NoteForm, self).__init__(*args, **kwargs)
 
+
 class NoteImageForm(forms.ModelForm):
     class Meta:
         model = NoteImage

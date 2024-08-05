@@ -13,5 +13,6 @@ urlpatterns = [
     path('get_previous_tests/', views.get_previous_tests, name='get_previous_tests'),
     path('get_test_detail/<int:test_id>/', views.get_test_detail, name='get_test_detail'),
     path('share/<uuid:pk>/', views.share_test, name="share_test"),  # New endpoint
-    path('shared/', views.shared_tests, name="shared_tests"),  # New endpoint
+    path('shared/', views.shared_tests, name="shared_tests"),
+    path('get_test_questions/<int:test_id>/', views.get_test_questions, name='get_test_questions'),  # New endpoint
 ]

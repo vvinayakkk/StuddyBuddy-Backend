@@ -173,3 +173,15 @@ def shared_tests(request):
     tests = Test.objects.filter(shared_with=user)
     serializer = TestSerializer(tests, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_test_questions(request, test_id):
+    user, error, status_code = get_user_from_token(request)
+    if error:
+        return Response(error, status=status_code)
+
+    test = get_object_or_404(Test, id=test_id, user=user)
+    questions = test.questions.all()
+    
+    serializer = QuestionSerializer(questions, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
