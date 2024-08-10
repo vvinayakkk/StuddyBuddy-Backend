@@ -7,7 +7,7 @@ class QuestionAdmin(admin.ModelAdmin):
         'correct_option', 'marks', 'negative_marks', 'text_image',
         'option1_image', 'option2_image', 'option3_image', 'option4_image'
     )
-    list_filter = ('chapter',)
+    list_filter = ('chapter__subdomain', 'chapter')
     search_fields = ('text', 'option1', 'option2', 'option3', 'option4')
 
 class TestAdmin(admin.ModelAdmin):
@@ -18,7 +18,7 @@ class TestAdmin(admin.ModelAdmin):
 
 class AnswerAdmin(admin.ModelAdmin):
     list_display = ('id', 'test', 'question', 'selected_option', 'correct')
-    list_filter = ('test', 'question',)
+    list_filter = ('test', 'question__chapter__subdomain', 'question__chapter',)
     search_fields = ('selected_option',)
 
 class SubjectAdmin(admin.ModelAdmin):

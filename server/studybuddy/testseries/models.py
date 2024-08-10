@@ -43,6 +43,7 @@ class Test(models.Model):
     duration = models.IntegerField()  # Duration in minutes
     questions = models.ManyToManyField(Question)
     score = models.IntegerField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
 
 class Answer(models.Model):
     test = models.ForeignKey(Test, on_delete=models.CASCADE)
