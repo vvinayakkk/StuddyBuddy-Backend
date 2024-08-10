@@ -32,13 +32,14 @@ class QuestionSerializer(serializers.ModelSerializer):
         ]
 
 class TestSerializer(serializers.ModelSerializer):
-    questions = QuestionSerializer(many=True)
-    
-
-
+    answers = serializers.SerializerMethodField()
     class Meta:
         model = Test
-        fields = ['id', 'user', 'name', 'created_at', 'duration', 'questions', 'score']
+        fields = ['id', 'user', 'name', 'created_at', 'duration', 'answers', 'score']
+    
+    def get_answers(self, obj):
+        answers = Answer.objects.filter(test=obj)
+        return AnswerSerializer(answers, many=True).data
 
 class AnswerSerializer(serializers.ModelSerializer):
     question = QuestionSerializer()
@@ -48,9 +49,13 @@ class AnswerSerializer(serializers.ModelSerializer):
         fields = ['id', 'test', 'question', 'selected_option', 'correct']
 
 class TestDetailSerializer(serializers.ModelSerializer):
-    questions = QuestionSerializer(many=True)
-    answers = AnswerSerializer(many=True)
+    
+    answers = serializers.SerializerMethodField()
 
-    class Meta:
+    class Meta: 
         model = Test
-        fields = ['id', 'user', 'name', 'created_at', 'duration', 'score', 'questions', 'answers']
+        fields = ['id', 'user', 'name', 'created_at', 'duration', 'score', 'answers']
+
+    def get_answers(self, obj):
+        answers = Answer.objects.filter(test=obj)
+        return AnswerSerializer(answers, many=True).data
