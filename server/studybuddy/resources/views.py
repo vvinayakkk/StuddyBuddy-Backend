@@ -1,7 +1,7 @@
 from django.http import FileResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404
-from .models import Resource, Bookmark
-from .serializers import ResourceSerializer, BookmarkSerializer
+from .models import Resource
+from .serializers import ResourceSerializer
 from authentication.models import User
 from django.conf import settings
 from rest_framework.decorators import api_view
@@ -31,73 +31,25 @@ def get_user_from_token(request):
     except Exception as e:
         return None, {"error": str(e)}, status.HTTP_403_FORBIDDEN
 
+from django.shortcuts import get_object_or_404
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Resource
+from .serializers import ResourceSerializer
+from authentication.views import get_user_from_token
+
+
 @api_view(['GET'])
 def resource_list(request):
-    user, error, status_code = get_user_from_token(request)
+    user, error, error_status = get_user_from_token(request)
     if error:
-        return Response(error, status=status_code)
-    
-    resources = Resource.objects.all()
+        return Response(error, status=error_status)
+
+    chapter_id = request.query_params.get('chapter')
+    if not chapter_id:
+        return Response({"error": "Chapter ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    resources = Resource.objects.filter(chapter_id=chapter_id)
     serializer = ResourceSerializer(resources, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
-@api_view(['GET'])
-def resource_detail(request, pk):
-    user, error, status_code = get_user_from_token(request)
-    if error:
-        return Response(error, status=status_code)
-    
-    resource = get_object_or_404(Resource, pk=pk)
-    serializer = ResourceSerializer(resource)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
-@api_view(['POST'])
-def resource_create(request):
-    user, error, status_code = get_user_from_token(request)
-    if error:
-        return Response(error, status=status_code)
-    
-    data = request.data.copy()
-    data['created_by'] = user.id
-    serializer = ResourceSerializer(data=data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@api_view(['POST'])
-def resource_bookmark(request, pk):
-    user, error, status_code = get_user_from_token(request)
-    if error:
-        return Response(error, status=status_code)
-    
-    resource = get_object_or_404(Resource, pk=pk)
-    bookmark, created = Bookmark.objects.get_or_create(user=user, resource=resource)
-    if created:
-        return Response({"status": "bookmarked"}, status=status.HTTP_201_CREATED)
-    else:
-        return Response({"status": "already bookmarked"}, status=status.HTTP_200_OK)
-
-@api_view(['GET'])
-def bookmark_list(request):
-    user, error, status_code = get_user_from_token(request)
-    if error:
-        return Response(error, status=status_code)
-    
-    bookmarks = Bookmark.objects.filter(user=user)
-    serializer = BookmarkSerializer(bookmarks, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
-@api_view(['GET'])
-def resource_download(request, pk):
-    user, error, status_code = get_user_from_token(request)
-    if error:
-        return Response(error, status=status_code)
-
-    resource = get_object_or_404(Resource, pk=pk)
-    if resource.resource_type == 'pdf' and resource.file:
-        response = FileResponse(resource.file.open(), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{resource.file.name}"'
-        return response
-    else:
-        return Response({"error": "Resource not available for download"}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(serializer.data)

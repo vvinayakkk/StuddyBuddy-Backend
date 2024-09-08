@@ -22,7 +22,7 @@ class ChapterSerializer(serializers.ModelSerializer):
 
 class QuestionSerializer(serializers.ModelSerializer):
     chapter = ChapterSerializer()
-    
+
     class Meta:
         model = Question
         fields = [
@@ -31,16 +31,6 @@ class QuestionSerializer(serializers.ModelSerializer):
             'correct_option', 'marks', 'negative_marks', 'chapter'
         ]
 
-class TestSerializer(serializers.ModelSerializer):
-    answers = serializers.SerializerMethodField()
-    class Meta:
-        model = Test
-        fields = ['id', 'user', 'name', 'created_at', 'duration', 'answers', 'score']
-    
-    def get_answers(self, obj):
-        answers = Answer.objects.filter(test=obj)
-        return AnswerSerializer(answers, many=True).data
-
 class AnswerSerializer(serializers.ModelSerializer):
     question = QuestionSerializer()
 
@@ -48,14 +38,54 @@ class AnswerSerializer(serializers.ModelSerializer):
         model = Answer
         fields = ['id', 'test', 'question', 'selected_option', 'correct']
 
-class TestDetailSerializer(serializers.ModelSerializer):
-    
+class TestSerializer(serializers.ModelSerializer):
     answers = serializers.SerializerMethodField()
 
-    class Meta: 
+    class Meta:
+        model = Test
+        fields = ['id', 'user', 'name', 'created_at', 'duration', 'answers', 'score']
+
+    def get_answers(self, obj):
+        answers = Answer.objects.filter(test=obj)
+        return AnswerSerializer(answers, many=True).data
+
+class TestDetailSerializer(serializers.ModelSerializer):
+    answers = serializers.SerializerMethodField()
+
+    class Meta:
         model = Test
         fields = ['id', 'user', 'name', 'created_at', 'duration', 'score', 'answers']
 
     def get_answers(self, obj):
         answers = Answer.objects.filter(test=obj)
         return AnswerSerializer(answers, many=True).data
+
+class MistakeAnalysisSerializer(serializers.ModelSerializer):
+    question = serializers.CharField(source='question.text')
+    chapter = serializers.CharField(source='question.chapter.name')
+    topic = serializers.CharField(source='question.chapter.subdomain.name')
+
+    class Meta:
+        model = Answer
+        fields = ['question_id', 'question', 'chapter', 'topic', 'wrong_count']
+
+class TopicAnalysisSerializer(serializers.Serializer):
+    topic = serializers.CharField()
+    total_questions = serializers.IntegerField()
+    correct_answers = serializers.IntegerField()
+    accuracy = serializers.FloatField()
+
+class TimeManagementAnalysisSerializer(serializers.Serializer):
+    duration = serializers.IntegerField()
+    total_questions = serializers.IntegerField()
+    correct_answers = serializers.IntegerField()
+
+class PerformanceSummarySerializer(serializers.Serializer):
+    total_tests = serializers.IntegerField()
+    total_score = serializers.IntegerField()
+    average_score = serializers.FloatField()
+    max_score = serializers.IntegerField()
+
+class WeakAreasAnalysisSerializer(serializers.Serializer):
+    topic = serializers.CharField()
+    wrong_count = serializers.IntegerField()
