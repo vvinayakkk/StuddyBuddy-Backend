@@ -27,5 +27,6 @@ urlpatterns = [
     path('todolist/',include('todolist.urls')),
     path('notes/', include('notes.urls')),
     path('testseries/', include('testseries.urls')),
-    path('resources/', include('resources.urls')),    
+    path('resources/', include('resources.urls')),  
+  
 ] + static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)

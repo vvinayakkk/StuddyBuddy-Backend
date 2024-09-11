@@ -35,11 +35,15 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 @csrf_exempt
 def upload_pdfs(request):
+    print("hi")
     logger.info("upload_pdfs view called")
     if request.method == 'POST':
+        print("hello")
         logger.info("Received POST request.")
         if 'pdf_files' in request.FILES:
+            print("enters")
             pdf_files = request.FILES.getlist('pdf_files')
+            print(pdf_files)
             logger.info(f"Number of files received: {len(pdf_files)}")
             if not pdf_files:
                 logger.error("No files found in the request.")
@@ -47,6 +51,7 @@ def upload_pdfs(request):
 
             try:
                 pdf_text = get_pdf_text(pdf_files)
+                print(pdf_text)
                 logger.info(f"Extracted text length: {len(pdf_text)}")
                 text_chunks = get_text_chunks(pdf_text)
                 get_vector_store(text_chunks)
@@ -88,11 +93,39 @@ def ask_question(request):
 def get_pdf_text(pdf_files):
     raw_text = ""
     for pdf in pdf_files:
-        pdf_reader = PyPDF2.PdfReader(pdf)
-        for page_num in range(len(pdf_reader.pages)):
-            page = pdf_reader.pages[page_num]
-            raw_text += page.extract_text()
+        print("vinayak")
+        print(pdf)
+        try:
+            pdf_reader = PyPDF2.PdfReader(pdf)
+            if not pdf_reader.pages:
+                logger.error(f"No pages found in PDF file: {pdf.name}")
+                continue
+            print("again?")
+            print(pdf_reader.pages)
+            for page_num in range(len(pdf_reader.pages)):
+                try:
+                    page = pdf_reader.pages[page_num]
+                    print("whatsupp bro")
+                    
+                    text = page.extract_text()
+                    print("lets see")
+                    print(text)
+                    if not text:
+                        logger.warning(f"No text found on page {page_num} of PDF file: {pdf.name}")
+                        continue
+                    raw_text += text
+                    
+                except Exception as e:
+                    logger.error(f"Error extracting text from page {page_num} of PDF file: {pdf.name}. Error: {e}")
+        
+        except Exception as e:
+            logger.error(f"Error processing PDF file: {pdf.name}. Error: {e}")
+    
+    if not raw_text:
+        logger.error("No text extracted from the provided PDF files.")
+    
     return raw_text
+
 
 def get_text_chunks(text):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=50000, chunk_overlap=1000)

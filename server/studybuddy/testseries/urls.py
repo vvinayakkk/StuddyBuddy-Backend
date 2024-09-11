@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path('subjects/', views.get_subjects, name='get_subjects'),
+    path('all_chapters/', views.get_allchapters, name='get_chapters'),
     path('subdomains/<int:subject_id>/', views.get_subdomains, name='get_subdomains'),
     path('chapters/<int:subdomain_id>/', views.get_chapters, name='get_chapters'),
     path('questions/<str:chapter_ids>/', views.get_questions, name='get_questions'),
@@ -20,4 +21,5 @@ urlpatterns = [
     path('analysis/mistakes/', views.mistakes_analysis, name='mistakes_analysis'),
     path('analysis/time_management/', views.time_management_analysis, name='time_management_analysis'),
     path('analysis/topic/', views.topic_analysis, name='topic_analysis'),  # Added Topic Analysis
+
 ]

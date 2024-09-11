@@ -42,6 +42,12 @@ def get_user_from_token(request):
     except Exception as e:
         return None, {"error": str(e)}, status.HTTP_403_FORBIDDEN
 @api_view(['GET'])
+def get_allchapters(request):
+    chapters = Chapter.objects.all()
+    serializer = ChapterSerializer(chapters, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
 def get_subjects(request):
     subjects = Subject.objects.all()
     serializer = SubjectSerializer(subjects, many=True)
