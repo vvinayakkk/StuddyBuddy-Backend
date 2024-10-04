@@ -8,7 +8,7 @@ import io
 class UserBasicSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email','profile_image']
+        fields = ['id', 'username', 'email', 'profile_image']
 
 class FriendRequestSenderOnlySerializer(serializers.ModelSerializer):
     sender = UserBasicSerializer()
@@ -16,7 +16,7 @@ class FriendRequestSenderOnlySerializer(serializers.ModelSerializer):
     class Meta:
         model = FriendRequest
         fields = ['id', 'sender', 'status', 'created_at']
- 
+
 class ProfileImageSerializer(serializers.ModelSerializer):
     profile_image = serializers.ImageField(required=True)
 
@@ -38,7 +38,7 @@ class ProfileImageSerializer(serializers.ModelSerializer):
                 except Exception:
                     raise serializers.ValidationError("Invalid image format or corrupted image.")
         return value
-       
+
 class FriendRequestSerializer(serializers.ModelSerializer):
     sender = UserBasicSerializer()
     receiver = UserBasicSerializer()
@@ -46,19 +46,17 @@ class FriendRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = FriendRequest
         fields = ['id', 'sender', 'receiver', 'status', 'created_at']
+
 class UserSerializer(serializers.ModelSerializer):
     friends = serializers.SerializerMethodField()
     sent_friend_requests = FriendRequestSerializer(many=True, read_only=True)
     received_friend_requests = FriendRequestSerializer(many=True, read_only=True)
     profile_image = serializers.ImageField(required=False)
+
     class Meta:
         model = User
-        fields = [
-            'id', 'email', 'username', 'department', 'year', 
-            'availability', 'courses', 'preferred_study_methods', 
-            'goals', 'password', 'friends', 'sent_friend_requests', 
-            'received_friend_requests','profile_image'
-        ]
+        fields = ['id', 'email', 'username', 'is_student', 'is_senior', 
+                  'friends', 'sent_friend_requests', 'received_friend_requests', 'profile_image']
         extra_kwargs = {
             'password': {'write_only': True},
         }
@@ -81,14 +79,10 @@ class UserSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.email = validated_data.get('email', instance.email)
         instance.username = validated_data.get('username', instance.username)
-        instance.department = validated_data.get('department', instance.department)
-        instance.year = validated_data.get('year', instance.year)
-        instance.availability = validated_data.get('availability', instance.availability)
-        instance.courses = validated_data.get('courses', instance.courses)
-        instance.preferred_study_methods = validated_data.get('preferred_study_methods', instance.preferred_study_methods)
-        instance.goals = validated_data.get('goals', instance.goals)
-        password = validated_data.get('password')
+        instance.is_student = validated_data.get('is_student', instance.is_student)
+        instance.is_senior = validated_data.get('is_senior', instance.is_senior)
         profile_image = validated_data.get('profile_image')
+        password = validated_data.get('password')
         if profile_image:
             instance.profile_image = profile_image
         if password:
