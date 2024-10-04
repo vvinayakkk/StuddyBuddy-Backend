@@ -15,9 +15,10 @@ class User(AbstractUser):
     is_senior = models.BooleanField(default=False)
     
     # Many-to-Many Relationship for Connections
-    connections = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='connected_users')
-    profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
     
+    profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
+    friends = models.ManyToManyField('self', blank=True, symmetrical=False)
+
     # Retain AbstractUser fields with custom `groups` and `user_permissions` fields
     groups = models.ManyToManyField(
         'auth.Group',
