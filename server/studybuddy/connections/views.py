@@ -65,12 +65,6 @@ def connect(request):
             'id': profile.id,
             'username': profile.username,
             'email': profile.email,
-            'department': profile.department,
-            'year': profile.year,
-            'availability': profile.availability,
-            'courses': profile.courses,
-            'preferred_study_methods': profile.preferred_study_methods,
-            'goals': profile.goals,
             'profile_image': profile.profile_image.url if profile.profile_image else None,
             'has_pending_request': profile.has_pending_request,
             'is_friend': profile.is_friend,
@@ -113,13 +107,8 @@ def friends(request):
             'id': friend.id,
             'username': friend.username,
             'email': friend.email,
-            'department': friend.department,
-            'year': friend.year,
-            'availability': friend.availability,
-            'courses': friend.courses,
             'profile_image': friend.profile_image.url if friend.profile_image else None,
-            'preferred_study_methods': friend.preferred_study_methods,
-            'goals': friend.goals,
+
         })
 
     return Response({
