@@ -101,16 +101,19 @@ CHANNEL_LAYERS={
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+import os
+
 DATABASES = {
     'default': {
-     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-     'NAME':'study',
-     'USER':'study',
-    'PASSWORD':os.getenv('PASSWORD'),   
-     'HOST':'localhost',
-     'PORT':'5432',   
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',  # Database name
+        'USER': 'postgres.qplxkxnvmqxxgehapdcc',  # Username part from the URL
+        'PASSWORD': 'E4hpmcr82@vvinayakkk',  # Replace with your actual password
+        'HOST': 'aws-0-ap-south-1.pooler.supabase.com',
+        'PORT': '6543',  # Supabase uses this port
     }
-}
+}   
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
