@@ -41,6 +41,7 @@ class LoginView(APIView):
             }
 
             token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+            token = token.decode('utf-8') if isinstance(token, bytes) else token
             print(payload)
             print(token)
             response = JsonResponse({'status': True, 'message': 'Login successful', 'token': token})
