@@ -57,6 +57,7 @@ cd suddy-buddu/StuddyBuddy-Backend/server/studybuddy
 Copy `.env.example` to `.env` and fill in your secrets/config:
 ```sh
 cp .env.example .env
+# Edit .env with your preferred editor and set all required values
 ```
 
 ### 3. Build & Run All Services (Docker Compose)
