@@ -4,10 +4,13 @@ from .forms import NoteForm, NoteShareForm
 from authentication.models import User
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, generics, permissions, filters
 from django.conf import settings
 import jwt
 import logging
+from .serializers import NoteSerializer
+from rest_framework.views import exception_handler
+from rest_framework.permissions import BasePermission
 
 logger = logging.getLogger(__name__)
 
@@ -219,3 +222,34 @@ def note_delete(request, pk):
     
     note.delete()
     return Response({"message": "Note deleted successfully"}, status=status.HTTP_200_OK)
+
+class IsStudentOrSenior(BasePermission):
+    def has_permission(self, request, view):
+        return hasattr(request.user, 'is_student') and request.user.is_student or \
+               hasattr(request.user, 'is_senior') and request.user.is_senior
+
+class NoteListView(generics.ListCreateAPIView):
+    queryset = Note.objects.all()
+    serializer_class = NoteSerializer
+    permission_classes = [permissions.IsAuthenticated, IsStudentOrSenior]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['title', 'content']
+    ordering_fields = ['created_at']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        user = self.request.user
+        return Note.objects.filter(created_by=user)
+
+def custom_exception_handler(exc, context):
+    response = exception_handler(exc, context)
+    if response is not None:
+        return Response({
+            'error': response.data,
+            'status_code': response.status_code
+        }, status=response.status_code)
+    return Response({'error': 'Internal server error', 'status_code': 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def notes_health_check(request):
+    return Response({'status': 'ok'}, status=200)

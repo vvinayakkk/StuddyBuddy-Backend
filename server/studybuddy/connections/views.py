@@ -7,6 +7,7 @@ from .serializers import FriendRequestSerializer, MessageSerializer
 from authentication.models import User
 import jwt
 from django.conf import settings
+from rest_framework.permissions import IsAuthenticated, BasePermission
 
 # Helper function to get user from the token
 def get_user_from_token(request):
@@ -167,3 +168,13 @@ def joinmeet(request):
         return Response({'roomID': rid})
     else:
         return Response({'error': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+class IsStudentOrSenior(BasePermission):
+    def has_permission(self, request, view):
+        return hasattr(request.user, 'is_student') and request.user.is_student or \
+               hasattr(request.user, 'is_senior') and request.user.is_senior
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsStudentOrSenior])
+def connections_health_check(request):
+    return Response({'status': 'ok'}, status=200)

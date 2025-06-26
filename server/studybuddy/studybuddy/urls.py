@@ -15,18 +15,24 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path,include
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
+from prometheus_django.views import ExportToDjangoView
+
+def health_check(request):
+    return JsonResponse({"status": "ok"})
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('pdfchatbot.urls')),
-    path('',include('authentication.urls')),
-    path('connect/', include('connections.urls')),
-    path('todolist/',include('todolist.urls')),
-    path('notes/', include('notes.urls')),
-    path('testseries/', include('testseries.urls')),
-    path('resources/', include('resources.urls')),  
-  
-] + static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)
+    path('health/', health_check, name='health_check'),
+    path('api/v1/pdfchatbot/', include('pdfchatbot.urls')),
+    path('api/v1/auth/', include('authentication.urls')),
+    path('api/v1/connect/', include('connections.urls')),
+    path('api/v1/todolist/', include('todolist.urls')),
+    path('api/v1/notes/', include('notes.urls')),
+    path('api/v1/testseries/', include('testseries.urls')),
+    path('api/v1/resources/', include('resources.urls')),
+    path('metrics/', ExportToDjangoView.as_view(), name='metrics'),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

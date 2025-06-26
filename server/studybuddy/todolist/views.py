@@ -8,6 +8,8 @@ from django.shortcuts import get_object_or_404
 import jwt
 from django.conf import settings
 from authentication.models import User
+from rest_framework import generics, permissions, filters
+from rest_framework.permissions import BasePermission
 
 
 # Helper function to get user from the token
@@ -169,3 +171,39 @@ def delete_assignments(request, uuid):
     assignment = get_object_or_404(Assignment, uuid=uuid, user=user)
     assignment.delete()
     return Response({"message": "Assignment deleted"}, status=status.HTTP_200_OK)
+
+
+class IsStudentOrSenior(BasePermission):
+    def has_permission(self, request, view):
+        return hasattr(request.user, 'is_student') and request.user.is_student or \
+               hasattr(request.user, 'is_senior') and request.user.is_senior
+
+class AssignmentListView(generics.ListCreateAPIView):
+    queryset = Assignment.objects.all()
+    serializer_class = AssignmentSerializer
+    permission_classes = [permissions.IsAuthenticated, IsStudentOrSenior]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['subject', 'chapter']
+    ordering_fields = ['deadline']
+    ordering = ['-deadline']
+
+    def get_queryset(self):
+        user = self.request.user
+        return Assignment.objects.filter(user=user)
+
+class SelfstudyListView(generics.ListCreateAPIView):
+    queryset = Selfstudy.objects.all()
+    serializer_class = SelfstudySerializer
+    permission_classes = [permissions.IsAuthenticated, IsStudentOrSenior]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['subject']
+    ordering_fields = ['deadline']
+    ordering = ['-deadline']
+
+    def get_queryset(self):
+        user = self.request.user
+        return Selfstudy.objects.filter(user=user)
+
+@api_view(['GET'])
+def todolist_health_check(request):
+    return Response({'status': 'ok'}, status=200)

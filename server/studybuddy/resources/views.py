@@ -8,6 +8,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 import jwt
+from rest_framework import generics, permissions, filters
+from rest_framework.permissions import BasePermission
 
 def get_user_from_token(request):
     try:
@@ -39,17 +41,23 @@ from .models import Resource
 from .serializers import ResourceSerializer
 from authentication.views import get_user_from_token
 
+class IsStudentOrSenior(BasePermission):
+    def has_permission(self, request, view):
+        return hasattr(request.user, 'is_student') and request.user.is_student or \
+               hasattr(request.user, 'is_senior') and request.user.is_senior
+
+class ResourceListView(generics.ListCreateAPIView):
+    queryset = Resource.objects.all()
+    serializer_class = ResourceSerializer
+    permission_classes = [permissions.IsAuthenticated, IsStudentOrSenior]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['resource_type', 'url']
+    ordering_fields = ['id']
+    ordering = ['-id']
+
+    def get_queryset(self):
+        return Resource.objects.all()
 
 @api_view(['GET'])
-def resource_list(request):
-    user, error, error_status = get_user_from_token(request)
-    if error:
-        return Response(error, status=error_status)
-
-    chapter_id = request.query_params.get('chapter')
-    if not chapter_id:
-        return Response({"error": "Chapter ID is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-    resources = Resource.objects.filter(chapter_id=chapter_id)
-    serializer = ResourceSerializer(resources, many=True)
-    return Response(serializer.data)
+def resources_health_check(request):
+    return Response({'status': 'ok'}, status=200)

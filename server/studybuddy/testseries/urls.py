@@ -1,8 +1,11 @@
 # urls.py
 from django.urls import path
+from .views import TestListView, testseries_health_check
 from . import views
 
 urlpatterns = [
+    path('', TestListView.as_view(), name="test_list"),
+    path('health/', testseries_health_check, name='testseries_health'),
     path('subjects/', views.get_subjects, name='get_subjects'),
     path('all_chapters/', views.get_allchapters, name='get_chapters'),
     path('subdomains/<int:subject_id>/', views.get_subdomains, name='get_subdomains'),

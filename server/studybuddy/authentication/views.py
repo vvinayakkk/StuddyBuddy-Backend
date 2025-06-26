@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -15,6 +15,11 @@ from .managers import CustomUserManager
 import jwt,datetime
 from django.contrib.auth import authenticate, login
 from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.contrib.auth.models import User as DjangoUser
+from rest_framework.permissions import IsAdminUser
+from django.utils import timezone
 
 class SignupView(APIView):
     def post(self, request):
@@ -163,3 +168,112 @@ def decline_friend_request_view(request, request_id):
     friend_request.status = 'declined'
     friend_request.save()
     return Response({'message': 'Friend request declined successfully'}, status=status.HTTP_200_OK)
+
+class LogoutView(APIView):
+    """Logs out the user by deleting the session/cookie."""
+    def post(self, request):
+        logout(request)
+        return Response({'detail': 'Logged out successfully.'}, status=status.HTTP_200_OK)
+
+class PasswordResetView(APIView):
+    """Sends a password reset email to the user."""
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = DjangoUser.objects.get(email=email)
+            token = default_token_generator.make_token(user)
+            reset_url = f"https://yourfrontend.com/reset-password/{user.pk}/{token}/"
+            send_mail(
+                'Password Reset',
+                f'Click the link to reset your password: {reset_url}',
+                settings.EMAIL_HOST_USER,
+                [email],
+                fail_silently=False,
+            )
+            return Response({'detail': 'Password reset email sent.'}, status=status.HTTP_200_OK)
+        except DjangoUser.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+class EmailVerificationView(APIView):
+    """Sends an email verification link to the user."""
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = DjangoUser.objects.get(email=email)
+            token = default_token_generator.make_token(user)
+            verify_url = f"https://yourfrontend.com/verify-email/{user.pk}/{token}/"
+            send_mail(
+                'Email Verification',
+                f'Click the link to verify your email: {verify_url}',
+                settings.EMAIL_HOST_USER,
+                [email],
+                fail_silently=False,
+            )
+            return Response({'detail': 'Verification email sent.'}, status=status.HTTP_200_OK)
+        except DjangoUser.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def user_role_counts(request):
+    return Response({
+        'students': User.objects.filter(is_student=True).count(),
+        'seniors': User.objects.filter(is_senior=True).count(),
+        'total': User.objects.count(),
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def active_user_count(request):
+    return Response({'active_users': User.objects.filter(is_active=True).count()})
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def recent_signups(request):
+    last_7_days = timezone.now() - timezone.timedelta(days=7)
+    count = User.objects.filter(date_joined__gte=last_7_days).count()
+    return Response({'recent_signups': count})
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def deactivate_user(request, user_id):
+    try:
+        user = User.objects.get(pk=user_id)
+        user.is_active = False
+        user.save()
+        return Response({'detail': 'User deactivated.'})
+    except User.DoesNotExist:
+        return Response({'error': 'User not found.'}, status=404)
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def reactivate_user(request, user_id):
+    try:
+        user = User.objects.get(pk=user_id)
+        user.is_active = True
+        user.save()
+        return Response({'detail': 'User reactivated.'})
+    except User.DoesNotExist:
+        return Response({'error': 'User not found.'}, status=404)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def export_user_data(request, user_id):
+    try:
+        user = User.objects.get(pk=user_id)
+        data = {
+            'id': user.id,
+            'email': user.email,
+            'username': user.username,
+            'is_student': user.is_student,
+            'is_senior': user.is_senior,
+            'date_joined': user.date_joined,
+            'profile_image': user.profile_image.url if user.profile_image else None,
+        }
+        return Response({'user_data': data})
+    except User.DoesNotExist:
+        return Response({'error': 'User not found.'}, status=404)

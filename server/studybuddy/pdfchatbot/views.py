@@ -6,8 +6,10 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated, BasePermission
+from rest_framework.response import Response
 import jwt
 from datetime import datetime, timedelta
 import PyPDF2
@@ -32,6 +34,11 @@ load_dotenv()
 
 # Configure Google Generative AI
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+class IsStudentOrSenior(BasePermission):
+    def has_permission(self, request, view):
+        return hasattr(request.user, 'is_student') and request.user.is_student or \
+               hasattr(request.user, 'is_senior') and request.user.is_senior
 
 @csrf_exempt
 def upload_pdfs(request):
@@ -213,3 +220,8 @@ def chat(request):
         return JsonResponse({'answer': response_text})
     except ValueError as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsStudentOrSenior])
+def pdfchatbot_health_check(request):
+    return Response({'status': 'ok'}, status=200)

@@ -19,6 +19,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Test, Answer, Question, Chapter, Subdomain
 from .serializers import TestSerializer, QuestionSerializer, AnswerSerializer
+from rest_framework import generics, permissions, filters
+from rest_framework.permissions import BasePermission
 
 def get_user_from_token(request):
     try:
@@ -305,3 +307,25 @@ def topic_analysis(request):
     } for item in topic_performance]
     
     return Response(data, status=status.HTTP_200_OK)
+
+class IsStudentOrSenior(BasePermission):
+    def has_permission(self, request, view):
+        return hasattr(request.user, 'is_student') and request.user.is_student or \
+               hasattr(request.user, 'is_senior') and request.user.is_senior
+
+class TestListView(generics.ListCreateAPIView):
+    queryset = Test.objects.all()
+    serializer_class = TestSerializer
+    permission_classes = [permissions.IsAuthenticated, IsStudentOrSenior]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name']
+    ordering_fields = ['created_at', 'score']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        user = self.request.user
+        return Test.objects.filter(user=user)
+
+@api_view(['GET'])
+def testseries_health_check(request):
+    return Response({'status': 'ok'}, status=200)

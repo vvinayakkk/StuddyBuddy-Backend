@@ -1,4 +1,5 @@
 from django.urls import path, include
+from .views import AssignmentListView, SelfstudyListView, todolist_health_check
 from . import views
 from django.contrib import admin
 
@@ -6,6 +7,9 @@ from django.contrib import admin
 
 
 urlpatterns = [
+    path('assignments/', AssignmentListView.as_view(), name='assignment_list'),
+    path('selfstudy/', SelfstudyListView.as_view(), name='selfstudy_list'),
+    path('health/', todolist_health_check, name='todolist_health'),
     path('', views.index, name='index'),
     path('assignments/<int:year>-<int:month>-<int:day>/', views.assignments, name='assignments'),
     path('selfstudy/<int:year>-<int:month>-<int:day>/', views.selfstudy, name='selfstudy'),
