@@ -1,5 +1,5 @@
 # StuddyBuddy Backend
-
+## Frontend Link: https://github.com/AnushkaShendge/study-buddy-frontend
 [![Open Source](https://img.shields.io/badge/Open%20Source-Yes-brightgreen)](https://opensource.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
