@@ -12,19 +12,23 @@ from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.response import Response
 import jwt
 from datetime import datetime, timedelta
-import PyPDF2
-import google.generativeai as genai
-from langchain.schema import AIMessage
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
-from langchain_community.vectorstores import FAISS
-from langchain.chains.question_answering import load_qa_chain
-from langchain.prompts import PromptTemplate
+try:
+    import PyPDF2
+    import google.generativeai as genai
+    from langchain_core.messages import AIMessage
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
+    from langchain_community.vectorstores import FAISS
+    from langchain.chains.question_answering import load_qa_chain
+    from langchain.prompts import PromptTemplate
+except ImportError as err:
+    print("Warning: Langchain dependency missing:", err)
+    AIMessage = object
 from authentication.models import User
 from .models import ChatMessage
 from .serializers import ChatMessageSerializer
 import logging
-import tensorflow as tf
+
 # Set up logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.ERROR)

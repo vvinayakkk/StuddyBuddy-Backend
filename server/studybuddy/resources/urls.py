@@ -6,5 +6,5 @@ from . import views
 urlpatterns = [
     path('', ResourceListView.as_view(), name='resource_list'),
     path('health/', resources_health_check, name='resources_health'),
-    path('resources/', views.resource_list, name='resource-list'),
+    path('resources/', ResourceListView.as_view(), name='resource-list'),
 ]

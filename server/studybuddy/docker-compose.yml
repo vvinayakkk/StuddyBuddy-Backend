@@ -5,7 +5,7 @@ services:
     restart: always
     environment:
       POSTGRES_DB: ${DJANGO_DB_NAME}
-      POSTGRES_USER: ${DJANGO_DB_USER}
+      POSTGRES_USER: ${DJANGO_DB_USER} 
       POSTGRES_PASSWORD: ${DJANGO_DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data/

@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: studybuddy-django-backend
+    env: python
+    rootDir: server/studybuddy
+    buildCommand: "./render-build.sh"
+    startCommand: "gunicorn studybuddy.wsgi:application"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: studybuddy.settings
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: USE_POSTGRES
+        value: "false"
+
+  - type: web
+    name: studybuddy-node-backend
+    env: node
+    rootDir: server/node-backend
+    buildCommand: "npm install"
+    startCommand: "node index.js"
+    envVars:
+      - key: NODE_VERSION
+        value: 20.15.1

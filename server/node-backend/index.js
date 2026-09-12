@@ -11,12 +11,13 @@ const fs = require('fs')
 const path = require('path');
 dotenv.config();
 
-mongoose.connect(process.env.MONGO_URL)
+const mongoUri = process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/studybuddy';
+mongoose.connect(mongoUri)
   .then(() => {
     console.log('Mongoose Connected');
   })
   .catch((err) => {
-    console.error('Error Connecting:', err);
+    console.warn('MongoDB connection warning (Chat history will be in-memory if DB is unreachable):', err.message);
   });
 
 const app = express();
@@ -25,14 +26,16 @@ app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(cors({
   credentials: true,
-  origin: 'http://localhost:5173',
+  origin: process.env.CLIENT_ORIGIN ? (process.env.CLIENT_ORIGIN.includes(',') ? process.env.CLIENT_ORIGIN.split(',') : process.env.CLIENT_ORIGIN) : true,
 }));
 
-const jwtSec = 'django-insecure-3fr_%q88m)p8-yp1c7^af^%(hox8p*9nl2i20goum(+m$%5sg_';
+
+const jwtSec = process.env.JWT_SECRET || 'django-insecure-3fr_%q88m)p8-yp1c7^af^%(hox8p*9nl2i20goum(+m$%5sg_';
 const bcryptSalt = bcrypt.genSaltSync(10);
 
-const server = app.listen(4000, () => {
-  console.log('Server is running on port 4000');
+const PORT = process.env.PORT || 4000;
+const server = app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
 
 app.get('/messages/:userId', async (req, res) => {
