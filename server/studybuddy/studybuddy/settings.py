@@ -55,9 +55,19 @@ INSTALLED_APPS = [
 
 ]
 
+try:
+    import whitenoise
+    HAS_WHITENOISE = True
+except ImportError:
+    HAS_WHITENOISE = False
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+]
+if HAS_WHITENOISE:
+    MIDDLEWARE.append('whitenoise.middleware.WhiteNoiseMiddleware')
+
+MIDDLEWARE += [
     'corsheaders.middleware.CorsMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
